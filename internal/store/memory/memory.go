@@ -1,4 +1,4 @@
-package cache
+package memory
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type Cache struct {
+type Store struct {
 	sync.RWMutex
 	items             map[string]Item
 	defaultExpiration time.Duration
@@ -19,24 +19,24 @@ type Item struct {
 	Created    time.Time
 }
 
-func New(defaultExpiration, cleanupInterval time.Duration) *Cache {
+func New(defaultExpiration, cleanupInterval time.Duration) *Store {
 
 	items := make(map[string]Item)
 
-	cache := Cache{
+	store := Store{
 		items:             items,
 		defaultExpiration: defaultExpiration,
 		cleanupInterval:   cleanupInterval,
 	}
 
 	if cleanupInterval > 0 {
-		cache.StartGC()
+		store.StartGC()
 	}
 
-	return &cache
+	return &store
 }
 
-func (c *Cache) Set(key string, value interface{}, duration time.Duration) {
+func (c *Store) Set(key string, value interface{}, duration time.Duration) {
 
 	var expiration int64
 
@@ -60,7 +60,7 @@ func (c *Cache) Set(key string, value interface{}, duration time.Duration) {
 
 }
 
-func (c *Cache) Get(key string) (interface{}, bool) {
+func (c *Store) Get(key string) (interface{}, bool) {
 
 	c.RLock()
 
@@ -83,7 +83,7 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 	return item.Value, true
 }
 
-func (c *Cache) Delete(key string) error {
+func (c *Store) Delete(key string) error {
 
 	c.Lock()
 
@@ -98,11 +98,11 @@ func (c *Cache) Delete(key string) error {
 	return nil
 }
 
-func (c *Cache) StartGC() {
+func (c *Store) StartGC() {
 	go c.GC()
 }
 
-func (c *Cache) GC() {
+func (c *Store) GC() {
 
 	for {
 
@@ -121,7 +121,7 @@ func (c *Cache) GC() {
 
 }
 
-func (c *Cache) expiredKeys() (keys []string) {
+func (c *Store) expiredKeys() (keys []string) {
 
 	c.RLock()
 
@@ -136,7 +136,7 @@ func (c *Cache) expiredKeys() (keys []string) {
 	return
 }
 
-func (c *Cache) clearItems(keys []string) {
+func (c *Store) clearItems(keys []string) {
 
 	c.Lock()
 
