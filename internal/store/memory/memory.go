@@ -65,14 +65,3 @@ func (c *Store) Delete(key string) error {
 
 	return nil
 }
-
-func (c *Store) clearItems(keys []string) {
-
-	c.Lock()
-
-	defer c.Unlock()
-
-	for _, k := range keys {
-		delete(c.items, k)
-	}
-}

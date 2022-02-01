@@ -10,8 +10,15 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+type Store interface {
+	Set(key string, value interface{})
+	Get(key string) (interface{}, bool)
+	Delete(key string) error
+}
+
 type Consumer struct {
-	sub *nats.Subscription
+	sub  *nats.Subscription
+	conn *nats.Conn
 }
 
 func NewConsumer(url string) (*Consumer, error) {
@@ -25,13 +32,14 @@ func NewConsumer(url string) (*Consumer, error) {
 		return &Consumer{}, fmt.Errorf("get JetStream: %v", err.Error())
 	}
 
-	sub, err := stream.SubscribeSync("subj")
+	sub, err := stream.SubscribeSync("ORDERS.*")
 	if err != nil {
 		return &Consumer{}, fmt.Errorf("cound not subscribe to a subject: %v", err)
 	}
 
 	return &Consumer{
-		sub: sub,
+		sub:  sub,
+		conn: connect,
 	}, nil
 }
 
@@ -68,7 +76,7 @@ streamLoop:
 
 			_, err = UnmarshalAndValidate(msg.Data)
 			if err != nil {
-				log.Println("could not unmarshal or validate message: %v", err)
+				log.Printf("could not unmarshal or validate message: %v", err)
 				continue
 			}
 			//
