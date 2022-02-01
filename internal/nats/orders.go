@@ -2,7 +2,6 @@ package nats
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/slvic/nats-service/internal/types"
 )
@@ -23,17 +22,19 @@ func NewOrdersHandler(ordersService OrdersService) *OrdersHandler {
 
 func (o *OrdersHandler) Handle(message []byte) error {
 	if len(message) == 0 {
-		return fmt.Errorf("data is empty")
+		return nil
 	}
 
 	var newOrder = types.Order{}
 	err := json.Unmarshal(message, &newOrder)
 	if err != nil {
-		return fmt.Errorf("could not unmarshal data: %v", err)
+		// zap
+		return nil
 	}
 
 	if errors := newOrder.Validate(); errors != nil {
-		return fmt.Errorf("could not validate data: %v", errors)
+		// zap
+		return nil
 	}
 
 	err = o.ordersService.SaveOrUpdate(newOrder)
