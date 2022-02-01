@@ -14,7 +14,7 @@ import (
 )
 
 type StoreService interface {
-	GetMessages(string) types.Order
+	GetMessageById(string) (types.Order, error)
 }
 
 type Server struct {
@@ -51,8 +51,20 @@ func (s *Server) getMessagesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	subject := keys[0]
-	s.storeService.GetMessages(subject)
+	id := keys[0]
+	order, err := s.storeService.GetMessageById(id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	rawOrder, err := json.Marshal(order)
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(rawOrder)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) Start() error {

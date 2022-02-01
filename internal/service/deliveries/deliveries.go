@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/slvic/nats-service/internal/store/memory"
+	"github.com/slvic/nats-service/internal/types"
 )
 
 type Deliverer struct {
@@ -15,13 +16,16 @@ func NewDeliverer(store *memory.Store) *Deliverer {
 		store: store,
 	}
 }
+func (d *Deliverer) SaveOrUpdate(order types.Order) error {
+	d.store.Set(order.Uid, order)
+	// possible db failure
+	return nil
+}
 
-func (d *Deliverer) GetMessagesBySubject(subject string) (string, error) {
-	_, found := d.store.Get(subject)
+func (d *Deliverer) GetMessageById(id string) (types.Order, error) {
+	order, found := d.store.Get(id)
 	if !found {
-		return "", fmt.Errorf("subject not found")
+		return types.Order{}, fmt.Errorf("message not found")
 	}
-
-	//
-	return "", nil
+	return order, nil
 }
