@@ -5,85 +5,86 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/nats-io/nats.go"
 )
 
-type Store interface {
-	Set(key string, value interface{})
-	Get(key string) (interface{}, bool)
-	Delete(key string) error
+const (
+	msgWaitTimeout = time.Second
+)
+
+type Handler interface {
+	Handle(message []byte) error
 }
 
-type Consumer struct {
-	sub  *nats.Subscription
-	conn *nats.Conn
+type NATS struct {
+	subs    map[*nats.Subscription]Handler
+	connect *nats.Conn
 }
 
-func NewConsumer(url string) (*Consumer, error) {
+func New(url string) (*NATS, error) {
 	connect, err := nats.Connect(url)
 	if err != nil {
-		return &Consumer{}, fmt.Errorf("connect: %v", err.Error())
+		return &NATS{}, fmt.Errorf("connect: %s", err.Error())
 	}
 
 	stream, err := connect.JetStream(nats.PublishAsyncMaxPending(256))
 	if err != nil {
-		return &Consumer{}, fmt.Errorf("get JetStream: %v", err.Error())
+		return &NATS{}, fmt.Errorf("get JetStream: %s", err.Error())
 	}
 
-	sub, err := stream.SubscribeSync("ORDERS.*")
+	orders, err := stream.SubscribeSync("ORDERS.*")
 	if err != nil {
-		return &Consumer{}, fmt.Errorf("cound not subscribe to a subject: %v", err)
+		return &NATS{}, fmt.Errorf("cound not subscribe to a subject: %v", err)
 	}
 
-	return &Consumer{
-		sub:  sub,
-		conn: connect,
+	return &NATS{
+		subs: map[*nats.Subscription]Handler{
+			orders: NewOrdersHandler(nil), // pass implementation
+		},
+		connect: connect,
 	}, nil
 }
 
-func (c *Consumer) Run(ctx context.Context) error {
-	var err error
-	defer func(sub *nats.Subscription) {
-		if unSubErr := sub.Unsubscribe(); unSubErr != nil {
-			err = fmt.Errorf("could not unsubscribe properly: %v", unSubErr)
-		}
-	}(c.sub)
-	defer func(sub *nats.Subscription) {
-		if drainErr := sub.Drain(); drainErr != nil {
-			err = fmt.Errorf("could not unsubscribe properly: %v", drainErr)
-		}
-	}(c.sub)
+func (n *NATS) Run(ctx context.Context) error {
+	wg := sync.WaitGroup{}
 
-streamLoop:
-	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("done")
-			break streamLoop
-		default:
-			msg, err := c.sub.NextMsg(time.Second)
-			if err == nats.ErrTimeout {
-				log.Println("could not read next message: timeout")
-				continue
-			}
-			if err != nil {
-				// migrate to zap logger
-				_, _ = fmt.Fprintf(os.Stderr, "next msg: %s", err.Error())
-			}
-			_ = msg.Ack()
+	for sub, handler := range n.subs {
+		wg.Add(1)
+		sub, handler := sub, handler
+		go func() {
+		streamLoop:
+			for {
+				select {
+				case <-ctx.Done():
+					wg.Done()
+					break streamLoop
+				default:
+					msg, err := sub.NextMsg(msgWaitTimeout)
+					if err == nats.ErrTimeout {
+						log.Println("could not read next message: timeout")
+						continue
+					}
+					if err != nil {
+						_, _ = fmt.Fprintf(os.Stderr, "next msg: %s", err.Error())
+						time.Sleep(time.Second * 5) // waiting for him to get better
+					}
 
-			_, err = UnmarshalAndValidate(msg.Data)
-			if err != nil {
-				log.Printf("could not unmarshal or validate message: %v", err)
-				continue
+					if err := handler.Handle(msg.Data); err != nil {
+						_ = msg.Nak()
+					}
+				}
 			}
-			//
-		}
+		}()
 	}
-	if err != nil {
-		return err
+
+	wg.Wait()
+
+	if !n.connect.IsClosed() {
+		n.connect.Close()
 	}
+
 	return nil
 }
