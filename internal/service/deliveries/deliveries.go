@@ -39,8 +39,8 @@ func (s *Stream) Subscribe(subject string) error {
 	return nil
 }
 
-func (s *Stream) Publish(subject string, message string) error {
-	_, err := s.jetstream.PublishAsync(subject, []byte(message))
+func (s *Stream) Publish(subject string, message []byte) error {
+	_, err := s.jetstream.PublishAsync(subject, message)
 	if err != nil {
 		return fmt.Errorf("could not publish a message: %v", err)
 	}
