@@ -4,7 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
-	"github.com/slvic/nats-service/internal/store/types"
+	"github.com/slvic/nats-service/internal/service"
+	"github.com/slvic/nats-service/internal/types"
 )
 
 type Database struct {
@@ -22,7 +23,7 @@ func NewDb(driver string, connection string) (*Database, error) {
 }
 
 func (d *Database) SaveOrUpdateMany(data []string) error {
-	orders, err := UnmarshalAndValidate(data)
+	orders, err := service.UnmarshalAndValidate(data)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal or validate while save or update many: %v", err)
 	}
@@ -44,7 +45,7 @@ func (d *Database) SaveOrUpdateMany(data []string) error {
 }
 
 func (d *Database) SaveOrUpdate(data string) error {
-	order, err := UnmarshalAndValidate([]string{data})
+	order, err := service.UnmarshalAndValidate([]string{data})
 	if err != nil {
 		return fmt.Errorf("could not unmarshal or validate while save or update: %v", err)
 	}

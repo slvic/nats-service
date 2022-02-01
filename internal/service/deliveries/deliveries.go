@@ -3,51 +3,69 @@ package deliveries
 import (
 	"context"
 	"fmt"
-	"github.com/nats-io/nats.go"
+	"log"
 	"os"
 	"time"
+
+	"github.com/nats-io/nats.go"
+	"github.com/slvic/nats-service/internal/service"
+	"github.com/slvic/nats-service/internal/store/memory"
 )
 
-type Stream struct {
-	subscriptions map[string]*nats.Subscription
+type Consumer struct {
 	jetstream     nats.JetStream
+	subscriptions map[string]*nats.Subscription
+	store         *memory.Store
 }
 
-func NewStream(url string) (*Stream, error) {
+func NewConsumer(url string, store *memory.Store) (*Consumer, error) {
 	connect, err := nats.Connect(url)
 	if err != nil {
-		return &Stream{}, fmt.Errorf("connect: %v", err.Error())
+		return &Consumer{}, fmt.Errorf("connect: %v", err.Error())
 	}
 
 	stream, err := connect.JetStream(nats.PublishAsyncMaxPending(256))
 	if err != nil {
-		return &Stream{}, fmt.Errorf("get JetStream: %v", err.Error())
+		return &Consumer{}, fmt.Errorf("get JetStream: %v", err.Error())
 	}
-	return &Stream{jetstream: stream}, nil
+	return &Consumer{
+		jetstream: stream,
+		store:     store,
+	}, nil
 }
 
-func (s *Stream) Subscribe(subject string) error {
-	if _, ok := s.subscriptions[subject]; ok {
+func (c *Consumer) Subscribe(subject string) error {
+	if _, ok := c.subscriptions[subject]; ok {
 		return fmt.Errorf("subscription already exists")
 	}
 
-	sub, err := s.jetstream.SubscribeSync(subject)
+	sub, err := c.jetstream.SubscribeSync(subject)
 	if err != nil {
 		return fmt.Errorf("cound not subscribe to a subject: %v", err)
 	}
-	s.subscriptions[subject] = sub
+	c.subscriptions[subject] = sub
 	return nil
 }
 
-func (s *Stream) Publish(subject string, message []byte) error {
-	_, err := s.jetstream.PublishAsync(subject, message)
+func (c *Consumer) Publish(subject string, message []byte) error {
+	_, err := c.jetstream.PublishAsync(subject, message)
 	if err != nil {
 		return fmt.Errorf("could not publish a message: %v", err)
 	}
 	return nil
 }
 
-func (s *Stream) Run(ctx context.Context) error {
+func (c *Consumer) GetMessagesBySubject(subject string) (string, error) {
+	_, found := c.store.Get(subject)
+	if !found {
+		return "", fmt.Errorf("subject not found")
+	}
+
+	//
+	return "", nil
+}
+
+func (c *Consumer) Run(ctx context.Context) error {
 	var err error
 	defer func(subscriptions map[string]*nats.Subscription) {
 		for _, sub := range subscriptions {
@@ -55,14 +73,14 @@ func (s *Stream) Run(ctx context.Context) error {
 				err = fmt.Errorf("could not unsubscribe properly: %v", unSubErr)
 			}
 		}
-	}(s.subscriptions)
+	}(c.subscriptions)
 	defer func(subscriptions map[string]*nats.Subscription) {
 		for _, sub := range subscriptions {
 			if drainErr := sub.Drain(); drainErr != nil {
 				err = fmt.Errorf("could not unsubscribe properly: %v", drainErr)
 			}
 		}
-	}(s.subscriptions)
+	}(c.subscriptions)
 
 streamLoop:
 	for {
@@ -71,9 +89,10 @@ streamLoop:
 			fmt.Println("done")
 			break streamLoop
 		default:
-			for _, sub := range s.subscriptions {
+			for _, sub := range c.subscriptions {
 				msg, err := sub.NextMsg(time.Second)
 				if err == nats.ErrTimeout {
+					log.Println("could not read next message: timeout")
 					continue
 				}
 				if err != nil {
@@ -81,7 +100,13 @@ streamLoop:
 					_, _ = fmt.Fprintf(os.Stderr, "next msg: %s", err.Error())
 				}
 				_ = msg.Ack()
-				fmt.Println("new message:", string(msg.Data))
+
+				order, err := service.UnmarshalAndValidate(msg.Data)
+				if err != nil {
+					log.Println("could not unmarshal or validate message: %v", err)
+					continue
+				}
+				c.store.Set(sub.Subject, order)
 			}
 		}
 	}

@@ -2,21 +2,22 @@ package handlers
 
 import (
 	"context"
-	"github.com/slvic/nats-service/internal/service/deliveries"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/slvic/nats-service/internal/service/deliveries"
 )
 
 type Server struct {
-	stream *deliveries.Stream
+	consumer *deliveries.Consumer
 }
 
-func NewServer(stream *deliveries.Stream) *Server {
-	return &Server{stream: stream}
+func NewServer(consumer *deliveries.Consumer) *Server {
+	return &Server{consumer: consumer}
 }
 
 type Messenger interface {
@@ -24,7 +25,7 @@ type Messenger interface {
 	Subscribe(subject string) error
 }
 
-func (s *Server) publishHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) postPublishHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		// add logger
 		return
@@ -44,14 +45,15 @@ func (s *Server) publishHandler(w http.ResponseWriter, r *http.Request) {
 
 	subject := keys[0]
 
-	err = s.stream.Publish(subject, message)
+	err = s.consumer.Publish(subject, message)
 	if err != nil {
 		// add logger
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 }
-func (s *Server) subscribeHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) postSubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		// add logger
 		return
@@ -65,17 +67,28 @@ func (s *Server) subscribeHandler(w http.ResponseWriter, r *http.Request) {
 
 	subject := keys[0]
 
-	err := s.stream.Subscribe(subject)
+	err := s.consumer.Subscribe(subject)
 	if err != nil {
 		// add logger
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) getMessagesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		// add logger
+		return
+	}
+
+	//
 }
 
 func (s *Server) Start() error {
 	router := http.NewServeMux()
-	router.HandleFunc("/publish", s.publishHandler)
-	router.HandleFunc("/subscribe", s.subscribeHandler)
+	router.HandleFunc("/publish", s.postPublishHandler)
+	router.HandleFunc("/subscribe", s.postSubscribeHandler)
 	address := ":8080"
 
 	srv := http.Server{
