@@ -22,7 +22,7 @@ type Server struct {
 	logger       *zap.Logger // should probably pass logger as an argument
 }
 
-func NewServer(storeService StoreService, logger *zap.Logger) *Server {
+func New(storeService StoreService, logger *zap.Logger) *Server {
 	return &Server{
 		storeService: storeService,
 		logger:       logger,
@@ -38,7 +38,10 @@ func (s *Server) getMessagesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keys, found := r.URL.Query()["subject"]
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	keys, found := r.URL.Query()["id"]
 	if !found {
 		notFoundResponse, err := json.Marshal(map[string]string{"reason": "there is no such a subject"})
 		if err != nil {
@@ -59,7 +62,6 @@ func (s *Server) getMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rawOrder, err := json.Marshal(order)
-	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(rawOrder)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -70,7 +72,7 @@ func (s *Server) getMessagesHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Start() error {
 	router := http.NewServeMux()
 	router.HandleFunc("/messages", s.getMessagesHandler)
-	address := ":8080"
+	address := ":3000"
 
 	srv := http.Server{
 		Addr:    address,
@@ -85,7 +87,7 @@ func (s *Server) Start() error {
 			log.Fatalf("listen error: %v", err)
 		}
 	}()
-	log.Println("Server started")
+	log.Println("Server started", "Listening at http://localhost"+address)
 
 	<-done
 	log.Println("Server stopped")

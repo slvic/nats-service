@@ -11,7 +11,7 @@ type Deliverer struct {
 	store *memory.Store
 }
 
-func NewDeliverer(store *memory.Store) *Deliverer {
+func New(store *memory.Store) *Deliverer {
 	return &Deliverer{
 		store: store,
 	}

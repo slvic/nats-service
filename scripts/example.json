@@ -13,7 +13,7 @@
   },
   "payment": {
     "transaction": "b563feb7b2b84b6test",
-    "request_id": "",
+    "request_id": "asd123",
     "currency": "USD",
     "provider": "wbpay",
     "amount": 1817,
@@ -21,7 +21,7 @@
     "bank": "alpha",
     "delivery_cost": 1500,
     "goods_total": 317,
-    "custom_fee": 0
+    "custom_fee": 42
   },
   "items": [
     {
@@ -39,7 +39,7 @@
     }
   ],
   "locale": "en",
-  "internal_signature": "",
+  "internal_signature": "xaxa",
   "customer_id": "test",
   "delivery_service": "meest",
   "shardkey": "9",
