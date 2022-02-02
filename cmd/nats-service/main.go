@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/nats-io/nats.go"
-	worker "github.com/slvic/nats-service/internal/nats"
+	"github.com/slvic/nats-service/internal/app"
+	"github.com/slvic/nats-service/internal/store/memory"
 	"go.uber.org/zap"
 )
 
@@ -17,13 +17,9 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("could not create new logger: %s", err.Error())
 	}
+	store := memory.New()
 
-	newWorker, err := worker.New(nats.DefaultURL, logger)
-	if err != nil {
-		return fmt.Errorf("could not create new worker: ")
-	}
-
-	err = newWorker.Run(ctx)
+	err = app.Initialize(ctx, logger, store)
 	if err != nil {
 		return err
 	}
