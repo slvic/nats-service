@@ -1,0 +1,19 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <title>NATS</title>
+</head>
+<body>
+    <div class="title">JET-STREAM</div>
+    <div class="inputs">
+        <input id="msgId" type="text" placeholder="Order id" value="b563feb7b2b84b6test">
+        <input id="getMsg" type="button" value="get message" onclick="getOrder()">
+    </div>
+    <div class="output">
+        <textarea id="message" cols="30" rows="10">Your order will be here</textarea>
+    </div>
+    <script src="fetcher.js" type="text/javascript"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+body{
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+    justify-self: center;
+    margin: 25px;
+    width: auto;
+    min-height: 500px;
+    outline: dashed 1px black;
+}
+
+.title{
+    margin-bottom: 20px;
+    font-family: arial, serif;
+    font-size: 20px;
+}
+
+.inputs{
+    margin-bottom: 10px;
+}
+
+.output{
+    min-height: 300px;
+    min-width: 300px;
+    text-align: center;
+}
+
+textarea{
+    width: 100%;
+    min-height: 30rem;
+    font-family: "Lucida Console", Monaco, monospace;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
