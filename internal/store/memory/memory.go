@@ -2,18 +2,16 @@ package memory
 
 import (
 	"sync"
-
-	"github.com/slvic/nats-service/internal/types"
 )
 
 type Store struct {
 	sync.RWMutex
-	items map[string]types.Order
+	items map[string][]byte
 }
 
 func New() *Store {
 
-	items := make(map[string]types.Order)
+	items := make(map[string][]byte)
 
 	store := Store{
 		items: items,
@@ -22,7 +20,7 @@ func New() *Store {
 	return &store
 }
 
-func (c *Store) Set(key string, value types.Order) {
+func (c *Store) Set(key string, value []byte) {
 	c.Lock()
 
 	defer c.Unlock()
@@ -30,7 +28,7 @@ func (c *Store) Set(key string, value types.Order) {
 	c.items[key] = value
 }
 
-func (c *Store) Get(key string) (types.Order, bool) {
+func (c *Store) Get(key string) ([]byte, bool) {
 
 	c.RLock()
 
@@ -39,7 +37,7 @@ func (c *Store) Get(key string) (types.Order, bool) {
 	item, found := c.items[key]
 
 	if !found {
-		return types.Order{}, false
+		return nil, false
 	}
 
 	return item, true

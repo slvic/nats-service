@@ -9,12 +9,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/slvic/nats-service/internal/types"
 	"go.uber.org/zap"
 )
 
 type StoreService interface {
-	GetMessageById(string) (types.Order, error)
+	GetMessageById(string) ([]byte, error)
 }
 
 type Server struct {
@@ -61,8 +60,7 @@ func (s *Server) getMessagesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rawOrder, err := json.Marshal(order)
-	_, err = w.Write(rawOrder)
+	_, err = w.Write(order)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

@@ -7,7 +7,7 @@ import (
 )
 
 type OrdersService interface {
-	SaveOrUpdate(order types.Order) error
+	SaveOrUpdate(order types.Order, rawOrder []byte) error
 }
 
 type OrdersHandler struct {
@@ -37,6 +37,6 @@ func (o *OrdersHandler) Handle(message []byte) error {
 		return nil
 	}
 
-	err = o.ordersService.SaveOrUpdate(newOrder)
+	err = o.ordersService.SaveOrUpdate(newOrder, message)
 	return err
 }
