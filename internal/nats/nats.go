@@ -78,7 +78,16 @@ func (n *NATS) Run(ctx context.Context) error {
 
 					if err := handler.Handle(msg.Data); err != nil {
 						n.logger.Error("cant handle message", zap.Error(err))
-						_ = msg.Nak()
+						err = msg.Nak()
+						if err != nil {
+							n.logger.Error("nak", zap.Error(err))
+							time.Sleep(time.Second * 5)
+						}
+					}
+					err = msg.Ack()
+					if err != nil {
+						n.logger.Error("ack", zap.Error(err))
+						time.Sleep(time.Second * 5)
 					}
 				}
 			}
