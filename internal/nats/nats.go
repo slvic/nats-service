@@ -81,7 +81,7 @@ func (n *NATS) Run(ctx context.Context) error {
 						err = msg.Nak()
 						if err != nil {
 							n.logger.Error("nak", zap.Error(err))
-							time.Sleep(time.Second * 5)
+							continue
 						}
 					}
 					err = msg.Ack()
