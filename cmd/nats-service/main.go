@@ -21,7 +21,11 @@ func run(ctx context.Context) error {
 	}
 	store := memory.New()
 
-	err = app.Initialize(ctx, logger, store, dbConfig)
+	newApp, err := app.Initialize(logger, store, dbConfig)
+	if err != nil {
+		return err
+	}
+	err = newApp.Run(ctx)
 	if err != nil {
 		return err
 	}

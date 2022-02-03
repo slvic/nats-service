@@ -15,8 +15,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, dbConfig *configs.DatabaseConfig) error {
-	errGroup := new(errgroup.Group)
+type App struct {
+	Nats *worker.NATS
+	Http *http.Server
+}
+
+func Initialize(logger *zap.Logger, store *memory.Store, dbConfig *configs.DatabaseConfig) (*App, error) {
 	dbConnectionString := fmt.Sprintf("user=%s dbname=%s password=%s port=%s sslmode=%s",
 		dbConfig.DBUser,
 		dbConfig.DBName,
@@ -25,39 +29,47 @@ func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, db
 		dbConfig.SSLMode)
 	database, err := persistent.New("postgres", dbConnectionString)
 	if err != nil {
-		return fmt.Errorf("could not create new database: %s", err.Error())
+		return &App{}, fmt.Errorf("could not create new database: %s", err.Error())
 	}
 
 	err = LoadOrdersFromDB(database, store, logger)
 	if err != nil {
-		return fmt.Errorf("could not load orders from db: %s", err.Error())
+		return &App{}, fmt.Errorf("could not load orders from db: %s", err.Error())
 	}
 
 	storeService := deliveries.New(store, database, logger)
 
 	newWorker, err := worker.New(nats.DefaultURL, logger)
 	if err != nil {
-		return fmt.Errorf("could not create new worker: %s", err.Error())
+		return &App{}, fmt.Errorf("could not create new worker: %s", err.Error())
 	}
 	ordersHandler := worker.NewOrdersHandler(storeService, logger)
 	err = newWorker.AddWorker("ORDERS.*", ordersHandler)
 	if err != nil {
-		return err
+		return &App{}, err
 	}
+
+	httpServer := http.New(storeService, logger)
+
+	return &App{
+		Nats: newWorker,
+		Http: httpServer,
+	}, nil
+}
+
+func (a *App) Run(ctx context.Context) error {
+	errGroup := new(errgroup.Group)
 	errGroup.Go(func() error {
-		err := newWorker.Run(ctx)
+		err := a.Nats.Run(ctx)
 		if err != nil {
 			return err
 		}
 		return nil
 	})
-
-	server := http.New(storeService, logger)
-	err = server.Start(ctx)
+	err := a.Http.Start(ctx)
 	if err != nil {
 		return err
 	}
-
 	if err := errGroup.Wait(); err != nil {
 		return err
 	}
