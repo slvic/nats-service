@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"go.uber.org/zap"
 )
@@ -19,6 +16,7 @@ type StoreService interface {
 type Server struct {
 	storeService StoreService
 	logger       *zap.Logger
+	httpServer   *http.Server
 }
 
 func New(storeService StoreService, logger *zap.Logger) *Server {
@@ -79,24 +77,11 @@ func (s *Server) Start(ctx context.Context) error {
 		BaseContext: func(_ net.Listener) context.Context { return ctx },
 	}
 
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-	go func() {
-		err := srv.ListenAndServe()
-		if err != nil {
-			s.logger.Error("listen", zap.Error(err))
-		}
-	}()
-	s.logger.Info("Server started", zap.String("Listening at", "http://localhost"+address))
+	s.httpServer = &srv
 
-	<-done
-	s.logger.Info("Server stopped")
+	return srv.ListenAndServe()
+}
 
-	err := srv.Shutdown(ctx)
-	if err != nil {
-		s.logger.Error("Server shutdown failed", zap.Error(err))
-		return err
-	}
-	s.logger.Info("Server exited properly")
-	return nil
+func (s *Server) Stop(ctx context.Context) error {
+	return s.httpServer.Shutdown(ctx)
 }

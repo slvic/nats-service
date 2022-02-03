@@ -53,7 +53,7 @@ func (n *NATS) AddWorker(subject string, handler Handler) error {
 	return nil
 }
 
-func (n *NATS) Run(ctx context.Context) error {
+func (n *NATS) Start(ctx context.Context) error {
 	wg := sync.WaitGroup{}
 
 	for sub, handler := range n.subs {
@@ -97,9 +97,12 @@ func (n *NATS) Run(ctx context.Context) error {
 
 	wg.Wait()
 
+	return nil
+}
+
+func (n *NATS) Stop() {
 	if !n.connect.IsClosed() {
 		n.connect.Close()
 	}
 	n.logger.Info("stream loop stopped")
-	return nil
 }
