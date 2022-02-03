@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats.go"
+	"github.com/slvic/nats-service/configs"
 	"github.com/slvic/nats-service/internal/http"
 	worker "github.com/slvic/nats-service/internal/nats"
 	"github.com/slvic/nats-service/internal/service/deliveries"
@@ -13,9 +14,15 @@ import (
 	"go.uber.org/zap"
 )
 
-func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store) error {
-	// add config
-	database, err := persistent.New("postgres", "user=postgres dbname=nats-service password=postgres port=5433 sslmode=disable")
+func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, dbConfig *configs.DatabaseConfig) error {
+	dbConnectionString := fmt.Sprintf("user=%s dbname=%s password=%s port=%s sslmode=%s",
+		dbConfig.DBUser,
+		dbConfig.DBName,
+		dbConfig.DBPassword,
+		dbConfig.DBPort,
+		dbConfig.SSLMode)
+	database, err := persistent.New("postgres", dbConnectionString)
+	fmt.Println(dbConnectionString)
 	if err != nil {
 		return fmt.Errorf("could not create new database: %s", err.Error())
 	}
