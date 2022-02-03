@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -73,8 +74,9 @@ func (s *Server) Start(ctx context.Context) error {
 	address := ":3000"
 
 	srv := http.Server{
-		Addr:    address,
-		Handler: router,
+		Addr:        address,
+		Handler:     router,
+		BaseContext: func(_ net.Listener) context.Context { return ctx },
 	}
 
 	done := make(chan os.Signal, 1)

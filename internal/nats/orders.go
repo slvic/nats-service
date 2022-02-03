@@ -1,6 +1,7 @@
 package nats
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/slvic/nats-service/internal/types"
@@ -8,7 +9,7 @@ import (
 )
 
 type OrdersService interface {
-	SaveOrUpdate(order types.Order, rawOrder []byte) error
+	SaveOrUpdate(ctx context.Context, order types.Order, rawOrder []byte) error
 }
 
 type OrdersHandler struct {
@@ -23,7 +24,7 @@ func NewOrdersHandler(ordersService OrdersService, logger *zap.Logger) *OrdersHa
 	}
 }
 
-func (o *OrdersHandler) Handle(message []byte) error {
+func (o *OrdersHandler) Handle(ctx context.Context, message []byte) error {
 	if len(message) == 0 {
 		return nil
 	}
@@ -40,6 +41,6 @@ func (o *OrdersHandler) Handle(message []byte) error {
 		return nil
 	}
 
-	err = o.ordersService.SaveOrUpdate(newOrder, message)
+	err = o.ordersService.SaveOrUpdate(ctx, newOrder, message)
 	return err
 }

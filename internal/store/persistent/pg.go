@@ -1,6 +1,7 @@
 package persistent
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -22,23 +23,23 @@ func New(driver string, connection string) (*Database, error) {
 	return database, nil
 }
 
-func (d *Database) SaveOrUpdate(order types.Order, rawOrder []byte) error {
+func (d *Database) SaveOrUpdate(ctx context.Context, order types.Order, rawOrder []byte) error {
 	queryString := `INSERT INTO orders (id, data) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data`
 	values := []interface{}{order.Uid, rawOrder}
 
-	_, err := d.pg.Query(queryString, values...)
+	_, err := d.pg.QueryContext(ctx, queryString, values...)
 	if err != nil {
 		return fmt.Errorf("could not execute save or update query: %s", err.Error())
 	}
 	return nil
 }
 
-func (d *Database) GetAll() ([]types.Message, error) {
+func (d *Database) GetAll(ctx context.Context) ([]types.Message, error) {
 	var orders []types.Message
 	dbOrder := new(types.Message)
 	queryString := `SELECT * FROM orders`
 
-	rows, err := d.pg.Query(queryString)
+	rows, err := d.pg.QueryContext(ctx, queryString)
 	if err != nil {
 		return nil, fmt.Errorf("could not execute get all query: %s", err.Error())
 	}

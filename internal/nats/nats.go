@@ -15,7 +15,7 @@ const (
 )
 
 type Handler interface {
-	Handle(message []byte) error
+	Handle(ctx context.Context, message []byte) error
 }
 
 type NATS struct {
@@ -77,7 +77,7 @@ func (n *NATS) Run(ctx context.Context) error {
 						time.Sleep(time.Second * 5)
 					}
 
-					if err := handler.Handle(msg.Data); err != nil {
+					if err := handler.Handle(ctx, msg.Data); err != nil {
 						n.logger.Error("cant handle message", zap.Error(err))
 						err = msg.Nak()
 						if err != nil {

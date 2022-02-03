@@ -20,7 +20,7 @@ type App struct {
 	Http *http.Server
 }
 
-func Initialize(logger *zap.Logger, store *memory.Store, dbConfig *configs.DatabaseConfig) (*App, error) {
+func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, dbConfig *configs.DatabaseConfig) (*App, error) {
 	dbConnectionString := fmt.Sprintf("user=%s dbname=%s password=%s port=%s sslmode=%s",
 		dbConfig.DBUser,
 		dbConfig.DBName,
@@ -32,7 +32,7 @@ func Initialize(logger *zap.Logger, store *memory.Store, dbConfig *configs.Datab
 		return &App{}, fmt.Errorf("could not create new database: %s", err.Error())
 	}
 
-	err = LoadOrdersFromDB(database, store, logger)
+	err = LoadOrdersFromDB(ctx, database, store, logger)
 	if err != nil {
 		return &App{}, fmt.Errorf("could not load orders from db: %s", err.Error())
 	}
@@ -76,8 +76,8 @@ func (a *App) Run(ctx context.Context) error {
 	return nil
 }
 
-func LoadOrdersFromDB(db *persistent.Database, store *memory.Store, logger *zap.Logger) error {
-	allMessages, err := db.GetAll()
+func LoadOrdersFromDB(ctx context.Context, db *persistent.Database, store *memory.Store, logger *zap.Logger) error {
+	allMessages, err := db.GetAll(ctx)
 	if err != nil {
 		logger.Error("database", zap.Error(err))
 		return fmt.Errorf("could not get all stream messages: %s", err.Error())
