@@ -29,24 +29,24 @@ func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, db
 		dbConfig.SSLMode)
 	database, err := persistent.New("postgres", dbConnectionString)
 	if err != nil {
-		return &App{}, fmt.Errorf("could not create new database: %s", err.Error())
+		return nil, fmt.Errorf("could not create new database: %s", err.Error())
 	}
 
 	err = loadOrdersFromDB(ctx, database, store, logger)
 	if err != nil {
-		return &App{}, fmt.Errorf("could not load orders from db: %s", err.Error())
+		return nil, fmt.Errorf("could not load orders from db: %s", err.Error())
 	}
 
 	storeService := deliveries.New(store, database, logger)
 
 	newWorker, err := worker.New(nats.DefaultURL, logger)
 	if err != nil {
-		return &App{}, fmt.Errorf("could not create new worker: %s", err.Error())
+		return nil, fmt.Errorf("could not create new worker: %s", err.Error())
 	}
 	ordersHandler := worker.NewOrdersHandler(storeService, logger)
 	err = newWorker.AddWorker("ORDERS.*", ordersHandler)
 	if err != nil {
-		return &App{}, err
+		return nil, err
 	}
 
 	httpServer := http.New(storeService, logger)
