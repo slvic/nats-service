@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -83,19 +82,19 @@ func (s *Server) Start() error {
 	go func() {
 		err := srv.ListenAndServe()
 		if err != nil {
-			log.Fatalf("listen error: %s", err.Error())
+			s.logger.Error("listen", zap.Error(err))
 		}
 	}()
-	log.Println("Server started", "Listening at http://localhost"+address)
+	s.logger.Info("Server started", zap.String("Listening at", "http://localhost"+address))
 
 	<-done
-	log.Println("Server stopped")
+	s.logger.Info("Server stopped")
 
 	err := srv.Shutdown(context.Background())
 	if err != nil {
-		log.Fatalf("Server shutdown failed: %s", err.Error())
+		s.logger.Error("Server shutdown failed", zap.Error(err))
 		return err
 	}
-	log.Println("Server exited properly")
+	s.logger.Info("Server exited properly")
 	return nil
 }
