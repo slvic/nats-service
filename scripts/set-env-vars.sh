@@ -1,6 +1,6 @@
 #!/bin/bash
-export POSTGRES_USER="postgres"
-export POSTGRES_NAME="nats-service"
-export POSTGRES_PASSWORD="postgres"
-export POSTGRES_PORT="5432"
-export POSTGRES_SSL_MODE="disabled"
+export NATS_SERVICE_DB_USER="postgres"
+export NATS_SERVICE_DB_NAME="nats-service"
+export NATS_SERVICE_DB_PASSWORD="postgres"
+export NATS_SERVICE_DB_PORT="5432"
+export NATS_SERVICE_DB_SSL_MODE="disable"
