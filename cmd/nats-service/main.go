@@ -8,20 +8,10 @@ import (
 	"syscall"
 
 	"github.com/slvic/nats-service/internal/app"
-	"github.com/slvic/nats-service/internal/configs"
-	"github.com/slvic/nats-service/internal/store/memory"
-	"go.uber.org/zap"
 )
 
 func run(ctx context.Context) error {
-	dbConfig, err := configs.NewDbConfig()
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		return fmt.Errorf("could not create new logger: %s", err.Error())
-	}
-	store := memory.New()
-
-	newApp, err := app.Initialize(ctx, logger, store, dbConfig)
+	newApp, err := app.Initialize(ctx)
 	if err != nil {
 		return err
 	}
@@ -29,7 +19,6 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 

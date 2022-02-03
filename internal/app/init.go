@@ -20,7 +20,16 @@ type App struct {
 	http *http.Server
 }
 
-func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, dbConfig *configs.DatabaseConfig) (*App, error) {
+func Initialize(ctx context.Context) (*App, error) {
+	dbConfig, err := configs.NewDbConfig()
+	if err != nil {
+		return nil, err
+	}
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		return nil, fmt.Errorf("could not create new logger: %s", err.Error())
+	}
+	store := memory.New()
 	dbConnectionString := fmt.Sprintf("user=%s dbname=%s password=%s port=%s sslmode=%s",
 		dbConfig.DBUser,
 		dbConfig.DBName,
@@ -60,16 +69,19 @@ func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, db
 func (a *App) Run(ctx context.Context) error {
 	errGroup, errGroupCtx := errgroup.WithContext(ctx)
 	errGroup.Go(func() error {
-		err := a.nats.Run(errGroupCtx)
+		err := a.nats.Start(errGroupCtx)
 		if err != nil {
 			return err
 		}
 		return nil
 	})
-	err := a.http.Start(ctx)
-	if err != nil {
-		return err
-	}
+	errGroup.Go(func() error {
+		err := a.http.Start(ctx)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err := errGroup.Wait(); err != nil {
 		return err
 	}
