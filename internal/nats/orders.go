@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/slvic/nats-service/internal/types"
+	"go.uber.org/zap"
 )
 
 type OrdersService interface {
@@ -12,11 +13,13 @@ type OrdersService interface {
 
 type OrdersHandler struct {
 	ordersService OrdersService
+	logger        *zap.Logger
 }
 
-func NewOrdersHandler(ordersService OrdersService) *OrdersHandler {
+func NewOrdersHandler(ordersService OrdersService, logger *zap.Logger) *OrdersHandler {
 	return &OrdersHandler{
 		ordersService: ordersService,
+		logger:        logger,
 	}
 }
 
@@ -28,12 +31,12 @@ func (o *OrdersHandler) Handle(message []byte) error {
 	var newOrder = types.Order{}
 	err := json.Unmarshal(message, &newOrder)
 	if err != nil {
-		// zap
+		o.logger.Error("could not unmarshal a message", zap.Error(err))
 		return nil
 	}
 
 	if errors := newOrder.Validate(); errors != nil {
-		// zap
+		o.logger.Error("could not validate a message", zap.Error(err))
 		return nil
 	}
 

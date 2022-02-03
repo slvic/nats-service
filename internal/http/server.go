@@ -42,7 +42,8 @@ func (s *Server) getMessagesHandler(w http.ResponseWriter, r *http.Request) {
 
 	keys, found := r.URL.Query()["id"]
 	if !found {
-		notFoundResponse, err := json.Marshal(map[string]string{"reason": "there is no such a subject"})
+		s.logger.Info("wrong query parameter")
+		notFoundResponse, err := json.Marshal(map[string]string{"reason": "wrong query parameter"})
 		if err != nil {
 			return
 		}

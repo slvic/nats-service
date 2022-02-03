@@ -20,18 +20,18 @@ func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store) er
 		return fmt.Errorf("could not create new database: %s", err.Error())
 	}
 
-	err = LoadOrdersFromDB(database, store)
+	err = LoadOrdersFromDB(database, store, logger)
 	if err != nil {
 		return fmt.Errorf("could not load orders from db: %s", err.Error())
 	}
 
-	storeService := deliveries.New(store, database)
+	storeService := deliveries.New(store, database, logger)
 
 	newWorker, err := worker.New(nats.DefaultURL, logger)
 	if err != nil {
 		return fmt.Errorf("could not create new worker: ")
 	}
-	ordersHandler := worker.NewOrdersHandler(storeService)
+	ordersHandler := worker.NewOrdersHandler(storeService, logger)
 	err = newWorker.AddWorker("ORDERS.*", ordersHandler)
 	if err != nil {
 		return err
@@ -54,14 +54,16 @@ func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store) er
 	return nil
 }
 
-func LoadOrdersFromDB(db *persistent.Database, store *memory.Store) error {
+func LoadOrdersFromDB(db *persistent.Database, store *memory.Store, logger *zap.Logger) error {
 	allMessages, err := db.GetAll()
 	if err != nil {
+		logger.Error("database", zap.Error(err))
 		return fmt.Errorf("could not get all stream messages: %s", err.Error())
 	}
 
 	for _, message := range allMessages {
 		store.Set(message.Id, message.Data)
 	}
+	logger.Info("all stream messages loaded")
 	return nil
 }

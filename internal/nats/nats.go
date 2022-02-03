@@ -65,15 +65,17 @@ func (n *NATS) Run(ctx context.Context) error {
 				select {
 				case <-ctx.Done():
 					wg.Done()
+					n.logger.Info("stream loop stopping...")
 					break streamLoop
 				default:
 					msg, err := sub.NextMsg(msgWaitTimeout)
 					if err == nats.ErrTimeout {
+						n.logger.Error("next msg timeout", zap.Error(err))
 						continue
 					}
 					if err != nil {
 						n.logger.Error("next msg", zap.Error(err))
-						time.Sleep(time.Second * 5) // waiting for him to get better
+						time.Sleep(time.Second * 5)
 					}
 
 					if err := handler.Handle(msg.Data); err != nil {
@@ -99,6 +101,6 @@ func (n *NATS) Run(ctx context.Context) error {
 	if !n.connect.IsClosed() {
 		n.connect.Close()
 	}
-
+	n.logger.Info("stream loop stopped")
 	return nil
 }
