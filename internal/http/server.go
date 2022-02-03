@@ -67,7 +67,7 @@ func (s *Server) getMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) Start() error {
+func (s *Server) Start(ctx context.Context) error {
 	router := http.NewServeMux()
 	router.HandleFunc("/messages", s.getMessagesHandler)
 	address := ":3000"
@@ -90,7 +90,7 @@ func (s *Server) Start() error {
 	<-done
 	s.logger.Info("Server stopped")
 
-	err := srv.Shutdown(context.Background())
+	err := srv.Shutdown(ctx)
 	if err != nil {
 		s.logger.Error("Server shutdown failed", zap.Error(err))
 		return err

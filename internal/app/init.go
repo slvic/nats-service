@@ -5,16 +5,18 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats.go"
-	"github.com/slvic/nats-service/configs"
+	"github.com/slvic/nats-service/internal/configs"
 	"github.com/slvic/nats-service/internal/http"
 	worker "github.com/slvic/nats-service/internal/nats"
 	"github.com/slvic/nats-service/internal/service/deliveries"
 	"github.com/slvic/nats-service/internal/store/memory"
 	"github.com/slvic/nats-service/internal/store/persistent"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, dbConfig *configs.DatabaseConfig) error {
+	errGroup := new(errgroup.Group)
 	dbConnectionString := fmt.Sprintf("user=%s dbname=%s password=%s port=%s sslmode=%s",
 		dbConfig.DBUser,
 		dbConfig.DBName,
@@ -22,7 +24,6 @@ func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, db
 		dbConfig.DBPort,
 		dbConfig.SSLMode)
 	database, err := persistent.New("postgres", dbConnectionString)
-	fmt.Println(dbConnectionString)
 	if err != nil {
 		return fmt.Errorf("could not create new database: %s", err.Error())
 	}
@@ -43,19 +44,21 @@ func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, db
 	if err != nil {
 		return err
 	}
-	go func() {
-		natsErr := newWorker.Run(ctx)
-		if natsErr != nil {
-			err = natsErr
+	errGroup.Go(func() error {
+		err := newWorker.Run(ctx)
+		if err != nil {
+			return err
 		}
-	}()
+		return nil
+	})
+
+	server := http.New(storeService, logger)
+	err = server.Start(ctx)
 	if err != nil {
 		return err
 	}
 
-	server := http.New(storeService, logger)
-	err = server.Start()
-	if err != nil {
+	if err := errGroup.Wait(); err != nil {
 		return err
 	}
 	return nil

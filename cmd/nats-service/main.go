@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/slvic/nats-service/configs"
 	"github.com/slvic/nats-service/internal/app"
+	"github.com/slvic/nats-service/internal/configs"
 	"github.com/slvic/nats-service/internal/store/memory"
 	"go.uber.org/zap"
 )
