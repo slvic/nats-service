@@ -36,7 +36,7 @@ func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, db
 
 	newWorker, err := worker.New(nats.DefaultURL, logger)
 	if err != nil {
-		return fmt.Errorf("could not create new worker: ")
+		return fmt.Errorf("could not create new worker: %s", err.Error())
 	}
 	ordersHandler := worker.NewOrdersHandler(storeService, logger)
 	err = newWorker.AddWorker("ORDERS.*", ordersHandler)

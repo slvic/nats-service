@@ -15,7 +15,7 @@ type Database struct {
 func New(driver string, connection string) (*Database, error) {
 	db, err := sql.Open(driver, connection)
 	if err != nil {
-		return nil, fmt.Errorf("could not open db: %v", err)
+		return nil, fmt.Errorf("could not open db: %s", err.Error())
 	}
 
 	database := &Database{pg: db}
@@ -28,7 +28,7 @@ func (d *Database) SaveOrUpdate(order types.Order, rawOrder []byte) error {
 
 	_, err := d.pg.Query(queryString, values...)
 	if err != nil {
-		return fmt.Errorf("could not execute save or update query: %v", err)
+		return fmt.Errorf("could not execute save or update query: %s", err.Error())
 	}
 	return nil
 }
@@ -40,7 +40,7 @@ func (d *Database) GetAll() ([]types.Message, error) {
 
 	rows, err := d.pg.Query(queryString)
 	if err != nil {
-		return nil, fmt.Errorf("could not execute get all query: %v", err)
+		return nil, fmt.Errorf("could not execute get all query: %s", err.Error())
 	}
 	defer func(rows *sql.Rows) {
 		rowsCloseErr := rows.Close()

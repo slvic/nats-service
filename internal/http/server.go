@@ -18,7 +18,7 @@ type StoreService interface {
 
 type Server struct {
 	storeService StoreService
-	logger       *zap.Logger // should probably pass logger as an argument
+	logger       *zap.Logger
 }
 
 func New(storeService StoreService, logger *zap.Logger) *Server {
@@ -83,7 +83,7 @@ func (s *Server) Start() error {
 	go func() {
 		err := srv.ListenAndServe()
 		if err != nil {
-			log.Fatalf("listen error: %v", err)
+			log.Fatalf("listen error: %s", err.Error())
 		}
 	}()
 	log.Println("Server started", "Listening at http://localhost"+address)
@@ -93,7 +93,7 @@ func (s *Server) Start() error {
 
 	err := srv.Shutdown(context.Background())
 	if err != nil {
-		log.Fatalf("Server shutdown failed: %v", err)
+		log.Fatalf("Server shutdown failed: %s", err.Error())
 		return err
 	}
 	log.Println("Server exited properly")

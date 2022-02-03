@@ -33,6 +33,6 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGKILL, syscall.SIGINT)
 	defer cancel()
 	if err := run(ctx); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "app run: %v\n", err.Error())
+		_, _ = fmt.Fprintf(os.Stderr, "app run: %s\n", err.Error())
 	}
 }

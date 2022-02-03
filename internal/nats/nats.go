@@ -47,7 +47,7 @@ func New(url string, logger *zap.Logger) (*NATS, error) {
 func (n *NATS) AddWorker(subject string, handler Handler) error {
 	sub, err := n.stream.SubscribeSync(subject)
 	if err != nil {
-		return fmt.Errorf("cound not subscribe to a subject: %v", err)
+		return fmt.Errorf("cound not subscribe to a subject: %s", err.Error())
 	}
 	n.subs[sub] = handler
 	return nil

@@ -18,16 +18,16 @@ type Payment struct {
 func (p *Payment) Validate() []error {
 	var errors []error
 	if p.Transaction == "" {
-		errors = append(errors, fmt.Errorf("payment transaction required, got: %v", p.Transaction))
+		errors = append(errors, fmt.Errorf("payment transaction required, got: %s", p.Transaction))
 	}
 	if p.RequestID == "" {
-		errors = append(errors, fmt.Errorf("payment request ID required, got: %v", p.RequestID))
+		errors = append(errors, fmt.Errorf("payment request ID required, got: %s", p.RequestID))
 	}
 	if p.Currency == "" {
-		errors = append(errors, fmt.Errorf("payment currency required, got: %v", p.Currency))
+		errors = append(errors, fmt.Errorf("payment currency required, got: %s", p.Currency))
 	}
 	if p.Provider == "" {
-		errors = append(errors, fmt.Errorf("payment provider required, got: %v", p.Provider))
+		errors = append(errors, fmt.Errorf("payment provider required, got: %s", p.Provider))
 	}
 	if p.Amount == 0 {
 		errors = append(errors, fmt.Errorf("payment amount required, got: %v", p.Amount))
@@ -36,7 +36,7 @@ func (p *Payment) Validate() []error {
 		errors = append(errors, fmt.Errorf("payment payment Dt required, got: %v", p.PaymentDt))
 	}
 	if p.Bank == "" {
-		errors = append(errors, fmt.Errorf("payment bank required, got: %v", p.Bank))
+		errors = append(errors, fmt.Errorf("payment bank required, got: %s", p.Bank))
 	}
 	if p.DeliveryCost == 0 {
 		errors = append(errors, fmt.Errorf("payment delivery cost required, got: %v", p.DeliveryCost))
