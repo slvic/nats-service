@@ -3,7 +3,6 @@
 - jet-stream
 
 ## Launch
-<hr>
 
 ### NATS server and postgres
 ```bash
@@ -23,13 +22,11 @@ POSTGRES_SSL_MODE
 - run `main.go`
 
 ## Scripts
-<hr>
 
 - `create-stream.sh` creates nats stream named `ORDERS` with enabled jet-stream
 - `publish.sh` sends an example message to the `ORDERS` stream
 
 ## Migrations
-<hr>
 
 Run 
 ```
