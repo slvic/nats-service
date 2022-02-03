@@ -11,8 +11,16 @@ $ docker-compose up
 ```
 
 ### Service
-- set environmental variables for db, needed variables described in `scripts/set-env-vars.sh`
-- Run `main.go`
+- set the following environmental variables:
+```bash
+POSTGRES_USER
+POSTGRES_NAME
+POSTGRES_PASSWORD
+POSTGRES_PORT
+POSTGRES_SSL_MODE
+```
+
+- run `main.go`
 
 ## Scripts
 <hr>
