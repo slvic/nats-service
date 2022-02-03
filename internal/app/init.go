@@ -16,8 +16,8 @@ import (
 )
 
 type App struct {
-	Nats *worker.NATS
-	Http *http.Server
+	nats *worker.NATS
+	http *http.Server
 }
 
 func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, dbConfig *configs.DatabaseConfig) (*App, error) {
@@ -32,7 +32,7 @@ func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, db
 		return &App{}, fmt.Errorf("could not create new database: %s", err.Error())
 	}
 
-	err = LoadOrdersFromDB(ctx, database, store, logger)
+	err = loadOrdersFromDB(ctx, database, store, logger)
 	if err != nil {
 		return &App{}, fmt.Errorf("could not load orders from db: %s", err.Error())
 	}
@@ -52,21 +52,21 @@ func Initialize(ctx context.Context, logger *zap.Logger, store *memory.Store, db
 	httpServer := http.New(storeService, logger)
 
 	return &App{
-		Nats: newWorker,
-		Http: httpServer,
+		nats: newWorker,
+		http: httpServer,
 	}, nil
 }
 
 func (a *App) Run(ctx context.Context) error {
-	errGroup := new(errgroup.Group)
+	errGroup, errGroupCtx := errgroup.WithContext(ctx)
 	errGroup.Go(func() error {
-		err := a.Nats.Run(ctx)
+		err := a.nats.Run(errGroupCtx)
 		if err != nil {
 			return err
 		}
 		return nil
 	})
-	err := a.Http.Start(ctx)
+	err := a.http.Start(ctx)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (a *App) Run(ctx context.Context) error {
 	return nil
 }
 
-func LoadOrdersFromDB(ctx context.Context, db *persistent.Database, store *memory.Store, logger *zap.Logger) error {
+func loadOrdersFromDB(ctx context.Context, db *persistent.Database, store *memory.Store, logger *zap.Logger) error {
 	allMessages, err := db.GetAll(ctx)
 	if err != nil {
 		logger.Error("database", zap.Error(err))
