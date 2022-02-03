@@ -70,7 +70,6 @@ func (n *NATS) Run(ctx context.Context) error {
 				default:
 					msg, err := sub.NextMsg(msgWaitTimeout)
 					if err == nats.ErrTimeout {
-						n.logger.Error("next msg timeout", zap.Error(err))
 						continue
 					}
 					if err != nil {
