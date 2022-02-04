@@ -67,25 +67,20 @@ func Initialize(ctx context.Context) (*App, error) {
 }
 
 func (a *App) Run(ctx context.Context) error {
-	errGroup, errGroupCtx := errgroup.WithContext(ctx)
+	errGroup, ctx := errgroup.WithContext(ctx)
 	errGroup.Go(func() error {
-		err := a.nats.Start(errGroupCtx)
-		if err != nil {
-			return err
-		}
-		return nil
+		return a.nats.Start(ctx)
 	})
 	errGroup.Go(func() error {
-		err := a.http.Start(ctx)
-		if err != nil {
-			return err
-		}
-		return nil
+		return a.http.Start(ctx)
 	})
-	if err := errGroup.Wait(); err != nil {
-		return err
-	}
-	return nil
+	errGroup.Go(func() error {
+		<-ctx.Done()
+		a.nats.Stop()
+		return a.http.Stop(ctx)
+	})
+
+	return errGroup.Wait()
 }
 
 func loadOrdersFromDB(ctx context.Context, db *persistent.Database, store *memory.Store, logger *zap.Logger) error {

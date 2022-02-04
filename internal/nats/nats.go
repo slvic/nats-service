@@ -10,10 +10,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	msgWaitTimeout = time.Second
-)
-
 type Handler interface {
 	Handle(ctx context.Context, message []byte) error
 }
@@ -60,36 +56,33 @@ func (n *NATS) Start(ctx context.Context) error {
 		wg.Add(1)
 		sub, handler := sub, handler
 		go func() {
-		streamLoop:
 			for {
-				select {
-				case <-ctx.Done():
+				msg, err := sub.NextMsgWithContext(ctx)
+				if err == context.Canceled {
 					wg.Done()
-					n.logger.Info("stream loop stopping...")
-					break streamLoop
-				default:
-					msg, err := sub.NextMsg(msgWaitTimeout)
-					if err == nats.ErrTimeout {
+					return
+				}
+				if err != nil {
+					n.logger.Error("next msg", zap.Error(err))
+					time.Sleep(time.Second * 5)
+				}
+
+				if msg == nil {
+					continue
+				}
+
+				if err := handler.Handle(ctx, msg.Data); err != nil {
+					n.logger.Error("cant handle message", zap.Error(err))
+					err = msg.Nak()
+					if err != nil {
+						n.logger.Error("nak", zap.Error(err))
 						continue
 					}
-					if err != nil {
-						n.logger.Error("next msg", zap.Error(err))
-						time.Sleep(time.Second * 5)
-					}
-
-					if err := handler.Handle(ctx, msg.Data); err != nil {
-						n.logger.Error("cant handle message", zap.Error(err))
-						err = msg.Nak()
-						if err != nil {
-							n.logger.Error("nak", zap.Error(err))
-							continue
-						}
-					}
-					err = msg.Ack()
-					if err != nil {
-						n.logger.Error("ack", zap.Error(err))
-						time.Sleep(time.Second * 5)
-					}
+				}
+				err = msg.Ack()
+				if err != nil {
+					n.logger.Error("ack", zap.Error(err))
+					time.Sleep(time.Second * 5)
 				}
 			}
 		}()
