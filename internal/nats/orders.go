@@ -3,7 +3,6 @@ package nats
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/nats-io/graft"
 	"github.com/slvic/nats-service/internal/types"
@@ -30,7 +29,6 @@ func (o *OrdersHandler) Handle(ctx context.Context, node *graft.Node, message []
 	if len(message) == 0 {
 		return nil
 	}
-	fmt.Println("I Handle hehe: ", node.Id(), node.State().String())
 	var newOrder = types.Order{}
 	err := json.Unmarshal(message, &newOrder)
 	if err != nil {
