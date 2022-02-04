@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nats-io/graft"
 	"github.com/slvic/nats-service/internal/store/memory"
 	"github.com/slvic/nats-service/internal/store/persistent"
 	"github.com/slvic/nats-service/internal/types"
@@ -33,12 +34,14 @@ func New(store *memory.Store, database *persistent.Database, logger *zap.Logger)
 		logger: logger,
 	}
 }
-func (d *Deliverer) SaveOrUpdate(ctx context.Context, order types.Order, rawOrder []byte) error {
+func (d *Deliverer) SaveOrUpdate(ctx context.Context, node *graft.Node, order types.Order, rawOrder []byte) error {
 	d.store.Set(order.Uid, rawOrder)
-	err := d.db.SaveOrUpdate(ctx, order, rawOrder)
-	if err != nil {
-		d.logger.Error("database", zap.Error(err))
-		return fmt.Errorf("could not save or update order: %s", err.Error())
+	if node.State() == graft.LEADER {
+		err := d.db.SaveOrUpdate(ctx, order, rawOrder)
+		if err != nil {
+			d.logger.Error("database", zap.Error(err))
+			return fmt.Errorf("could not save or update order: %s", err.Error())
+		}
 	}
 	return nil
 }
