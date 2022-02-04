@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nats-io/graft"
 	"github.com/slvic/nats-service/internal/store/memory"
 	"github.com/slvic/nats-service/internal/store/persistent"
 	"github.com/slvic/nats-service/internal/types"
@@ -21,22 +20,28 @@ type Database interface {
 	GetAll(ctx context.Context) ([]types.Message, error)
 }
 
-type Deliverer struct {
-	store  Memory
-	db     Database
-	logger *zap.Logger
+type LeaderElector interface {
+	AmILeader() bool
 }
 
-func New(store *memory.Store, database *persistent.Database, logger *zap.Logger) *Deliverer {
+type Deliverer struct {
+	store   Memory
+	db      Database
+	elector LeaderElector
+	logger  *zap.Logger
+}
+
+func New(store *memory.Store, database *persistent.Database, elector LeaderElector, logger *zap.Logger) *Deliverer {
 	return &Deliverer{
-		store:  store,
-		db:     database,
-		logger: logger,
+		store:   store,
+		db:      database,
+		elector: elector,
+		logger:  logger,
 	}
 }
-func (d *Deliverer) SaveOrUpdate(ctx context.Context, node *graft.Node, order types.Order, rawOrder []byte) error {
+func (d *Deliverer) SaveOrUpdate(ctx context.Context, order types.Order, rawOrder []byte) error {
 	d.store.Set(order.Uid, rawOrder)
-	if node.State() == graft.LEADER {
+	if d.elector.AmILeader() {
 		err := d.db.SaveOrUpdate(ctx, order, rawOrder)
 		if err != nil {
 			d.logger.Error("database", zap.Error(err))

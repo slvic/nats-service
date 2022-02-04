@@ -8,6 +8,7 @@ import (
 	"github.com/slvic/nats-service/internal/configs"
 	"github.com/slvic/nats-service/internal/http"
 	worker "github.com/slvic/nats-service/internal/nats"
+	"github.com/slvic/nats-service/internal/service"
 	"github.com/slvic/nats-service/internal/service/deliveries"
 	"github.com/slvic/nats-service/internal/store/memory"
 	"github.com/slvic/nats-service/internal/store/persistent"
@@ -46,9 +47,18 @@ func Initialize(ctx context.Context) (*App, error) {
 		return nil, fmt.Errorf("could not load orders from db: %s", err.Error())
 	}
 
-	storeService := deliveries.New(store, database, logger)
+	connection, err := nats.Connect(nats.DefaultURL)
+	if err != nil {
+		return nil, fmt.Errorf("connect: %s", err.Error())
+	}
 
-	newWorker, err := worker.New(nats.DefaultURL, logger)
+	elector, err := service.NewGraftElector(connection)
+	if err != nil {
+		return nil, err
+	}
+
+	storeService := deliveries.New(store, database, elector, logger)
+	newWorker, err := worker.New(connection, logger)
 	if err != nil {
 		return nil, fmt.Errorf("could not create new worker: %s", err.Error())
 	}
