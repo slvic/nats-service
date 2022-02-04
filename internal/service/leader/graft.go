@@ -1,4 +1,4 @@
-package service
+package leader
 
 import (
 	"fmt"
@@ -20,9 +20,9 @@ func NewGraftElector(connect *nats.Conn) (*GraftElector, error) {
 	errChan := make(chan error)
 	stateChangeChan := make(chan graft.StateChange)
 	handler := graft.NewChanHandler(stateChangeChan, errChan)
-	node, err := graft.New(ci, handler, rpc, "/tmp/graft.log")
+	node, err := graft.New(ci, handler, rpc, "/tmp/leader.log")
 	if err != nil {
-		return nil, fmt.Errorf("could not create graft node: %s", err.Error())
+		return nil, fmt.Errorf("could not create leader node: %s", err.Error())
 	}
 	return &GraftElector{node: node}, nil
 }

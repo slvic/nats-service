@@ -8,8 +8,8 @@ import (
 	"github.com/slvic/nats-service/internal/configs"
 	"github.com/slvic/nats-service/internal/http"
 	worker "github.com/slvic/nats-service/internal/nats"
-	"github.com/slvic/nats-service/internal/service"
 	"github.com/slvic/nats-service/internal/service/deliveries"
+	"github.com/slvic/nats-service/internal/service/leader"
 	"github.com/slvic/nats-service/internal/store/memory"
 	"github.com/slvic/nats-service/internal/store/persistent"
 	"go.uber.org/zap"
@@ -52,7 +52,7 @@ func Initialize(ctx context.Context) (*App, error) {
 		return nil, fmt.Errorf("connect: %s", err.Error())
 	}
 
-	elector, err := service.NewGraftElector(connection)
+	elector, err := leader.NewGraftElector(connection)
 	if err != nil {
 		return nil, err
 	}
