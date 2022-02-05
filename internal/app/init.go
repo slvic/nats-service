@@ -31,11 +31,12 @@ func Initialize(ctx context.Context) (*App, error) {
 		return nil, fmt.Errorf("could not create new logger: %s", err.Error())
 	}
 	store := memory.New()
-	dbConnectionString := fmt.Sprintf("user=%s dbname=%s password=%s port=%s sslmode=%s",
+	dbConnectionString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		dbConfig.DBUser,
-		dbConfig.DBName,
 		dbConfig.DBPassword,
+		dbConfig.DBHost,
 		dbConfig.DBPort,
+		dbConfig.DBName,
 		dbConfig.SSLMode)
 	database, err := persistent.New("postgres", dbConnectionString)
 	if err != nil {
@@ -47,7 +48,7 @@ func Initialize(ctx context.Context) (*App, error) {
 		return nil, fmt.Errorf("could not load orders from db: %s", err.Error())
 	}
 
-	connection, err := nats.Connect(nats.DefaultURL)
+	connection, err := nats.Connect("nats://nats-service_nats_1:4222")
 	if err != nil {
 		return nil, fmt.Errorf("connect: %s", err.Error())
 	}
