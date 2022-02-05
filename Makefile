@@ -16,7 +16,7 @@ run-first-example-container:
 	--env NATS_SERVICE_DB_USER='postgres' \
 	--env NATS_SERVICE_DB_NAME='nats-service' \
 	--env NATS_SERVICE_DB_PASSWORD='postgres' \
-	--enc NATS_SERVICE_DB_HOST="nats_service_postgres" \
+	--env NATS_SERVICE_DB_HOST="nats_service_postgres" \
 	--env NATS_SERVICE_DB_PORT='5432' \
 	--env NATS_SERVICE_DB_SSL_MODE='disable' \
 	nats-service-scratch
@@ -27,7 +27,7 @@ run-second-example-container:
     	--env NATS_SERVICE_DB_USER='postgres' \
     	--env NATS_SERVICE_DB_NAME='nats-service' \
     	--env NATS_SERVICE_DB_PASSWORD='postgres' \
-   		--enc NATS_SERVICE_DB_HOST="nats_service_postgres" \
+   		--env NATS_SERVICE_DB_HOST="nats_service_postgres" \
     	--env NATS_SERVICE_DB_PORT='5432' \
     	--env NATS_SERVICE_DB_SSL_MODE='disable' \
     	nats-service-scratch
