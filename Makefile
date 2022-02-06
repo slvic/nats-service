@@ -11,7 +11,7 @@ create-example-nats-stream:
 # Docker image
 .PHONY: "build"
 build:
-	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/nats-service/
+	CGO_ENABLED=0 GOOS=linux go build -a -o main ./cmd/nats-service/
 
 .PHONY: "create-docker-image"
 create-docker-image:
@@ -45,7 +45,7 @@ run-first-example-container:
 	--env NATS_SERVICE_DB_SSL_MODE='disable' \
 	--env NATS_SERVICE_NATS_HOST="nats_service_nats_server" \
 	--env NATS_SERVICE_NATS_PORT="4222" \
-	nats-service-scratch
+	 slvic/nats-service-scratch:latest
 
 .PHONY: "run-second-example-container"
 run-second-example-container:
@@ -58,7 +58,7 @@ run-second-example-container:
     	--env NATS_SERVICE_DB_SSL_MODE='disable' \
 		--env NATS_SERVICE_NATS_HOST="nats_service_nats_server" \
 		--env NATS_SERVICE_NATS_PORT="4222" \
-    	nats-service-scratch
+    	slvic/nats-service-scratch:latest
 
 .PHONY: "run-example"
 run-example: run-first-example-container run-second-example-container
