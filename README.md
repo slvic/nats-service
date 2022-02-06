@@ -1,6 +1,20 @@
 # NATS-SERVICE
 - postgres
 - jet-stream
+- docker
+
+### Example launch
+```bash
+$ docker-compose up # runs NATS server and postgres
+$ make docker-connect # connects NATS server and postgres containers to docker network
+$ make migrate
+$ make create-example-nats-stream
+$ make run-example
+```
+To publish a sample message to nats server run `/scripts/publish.sh` script.
+
+To check if your message has been delivered open `/web/page/index.html` and hit "get message button" 
+
 
 ## Launch
 
@@ -17,6 +31,8 @@ POSTGRES_NAME
 POSTGRES_PASSWORD
 POSTGRES_PORT
 POSTGRES_SSL_MODE
+NATS_SERVICE_NATS_HOST
+NATS_SERVICE_NATS_PORT
 ```
 
 - run `main.go`
@@ -24,7 +40,7 @@ POSTGRES_SSL_MODE
 ## Scripts
 
 - `create-stream.sh` creates nats stream named `ORDERS` with enabled jet-stream
-- `publish.sh` sends an example message to the `ORDERS` stream
+- `publish.sh` sends a sample message to the `ORDERS` stream
 
 ## Migrations
 
