@@ -6,20 +6,34 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-type DatabaseConfig struct {
-	DBUser     string `envconfig:"NATS_SERVICE_DB_USER"`
-	DBName     string `envconfig:"NATS_SERVICE_DB_NAME"`
-	DBPassword string `envconfig:"NATS_SERVICE_DB_PASSWORD"`
-	DBHost     string `envconfig:"NATS_SERVICE_DB_HOST"`
-	DBPort     string `envconfig:"NATS_SERVICE_DB_PORT"`
-	SSLMode    string `envconfig:"NATS_SERVICE_DB_SSL_MODE"`
+type ConfigDatabase struct {
+	User     string `envconfig:"NATS_SERVICE_DB_USER"`
+	Name     string `envconfig:"NATS_SERVICE_DB_NAME"`
+	Password string `envconfig:"NATS_SERVICE_DB_PASSWORD"`
+	Host     string `envconfig:"NATS_SERVICE_DB_HOST"`
+	Port     string `envconfig:"NATS_SERVICE_DB_PORT"`
+	ModeSSL  string `envconfig:"NATS_SERVICE_DB_SSL_MODE"`
 }
 
-func NewDbConfig() (*DatabaseConfig, error) {
-	var dbConfig DatabaseConfig
+type ConfigNATS struct {
+	Host string `envconfig:"NATS_SERVICE_NATS_HOST"`
+	Port string `envconfig:"NATS_SERVICE_NATS_PORT"`
+}
+
+func NewConfigDB() (*ConfigDatabase, error) {
+	var dbConfig ConfigDatabase
 	err := envconfig.Process("nats_service_db", &dbConfig)
 	if err != nil {
-		return nil, fmt.Errorf("could not process env file: %s", err.Error())
+		return nil, fmt.Errorf("could not process database env: %s", err.Error())
 	}
 	return &dbConfig, nil
+}
+
+func NewConfigNATS() (*ConfigNATS, error) {
+	var natsConfig ConfigNATS
+	err := envconfig.Process("nats_service_nats", &natsConfig)
+	if err != nil {
+		return nil, fmt.Errorf("could not process nats server env: %s", err.Error())
+	}
+	return &natsConfig, nil
 }

@@ -22,7 +22,11 @@ type App struct {
 }
 
 func Initialize(ctx context.Context) (*App, error) {
-	dbConfig, err := configs.NewDbConfig()
+	dbConfig, err := configs.NewConfigDB()
+	if err != nil {
+		return nil, err
+	}
+	natsConfig, err := configs.NewConfigNATS()
 	if err != nil {
 		return nil, err
 	}
@@ -32,12 +36,12 @@ func Initialize(ctx context.Context) (*App, error) {
 	}
 	store := memory.New()
 	dbConnectionString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		dbConfig.DBUser,
-		dbConfig.DBPassword,
-		dbConfig.DBHost,
-		dbConfig.DBPort,
-		dbConfig.DBName,
-		dbConfig.SSLMode)
+		dbConfig.User,
+		dbConfig.Password,
+		dbConfig.Host,
+		dbConfig.Port,
+		dbConfig.Name,
+		dbConfig.ModeSSL)
 	database, err := persistent.New("postgres", dbConnectionString)
 	if err != nil {
 		return nil, fmt.Errorf("could not create new database: %s", err.Error())
@@ -48,7 +52,10 @@ func Initialize(ctx context.Context) (*App, error) {
 		return nil, fmt.Errorf("could not load orders from db: %s", err.Error())
 	}
 
-	connection, err := nats.Connect("nats://nats-service_nats_1:4222")
+	natsConnectionString := fmt.Sprintf("nats://%s:%s",
+		natsConfig.Host,
+		natsConfig.Port)
+	connection, err := nats.Connect(natsConnectionString)
 	if err != nil {
 		return nil, fmt.Errorf("connect: %s", err.Error())
 	}

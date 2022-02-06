@@ -11,6 +11,7 @@ services:
       - POSTGRES_DB=nats-service
     command: ["postgres", "-c", "log_statement=all"]
   nats:
+    container_name: nats_service_nats_server
     image: "nats:2.7.1-scratch"
     ports:
       - "4222:4222"
